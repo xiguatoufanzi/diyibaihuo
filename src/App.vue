@@ -2,11 +2,15 @@
   <div>
     <div>
       <div>抢哪个！</div>
-      <div v-for="(item) in cartList" :key="item.activity_no">
-        <div v-for="(item1,index1) in item.sku_detail" :key="item1.goods_id">
+      <div v-for="(item,index) in cartList" :key="index">
+        <div v-if="item.stock != 0">
+          <label @click="checkuuid(item)" :for="item.id">{{item.suk}}<input class="checksku" :id="item.id" :value="JSON.stringify(item)" type="checkbox"></label>
+          <span>价格{{item.price}}</span>
+        </div>
+        <!-- <div v-for="(item1,index1) in item.sku_detail" :key="item1.goods_id">
           <label @click="checkuuid(item.sku_list[index1])" :for="item.sku_list[index1].goods_id">{{item1.goods_name}}<input class="checksku" :id="item.sku_list[index1].goods_id" :value="JSON.stringify(item.sku_list[index1])" type="checkbox"></label>
           <span>价格{{item1.price}}</span>
-        </div>
+        </div> -->
       </div>
     </div>
     <button @click="getCartList">请求数据1</button>
@@ -26,6 +30,7 @@ function ajax({ method = 'POST', url = '', params = {}, token = '', host = "/api
     return new Promise((resolve, reject) => {
         let baseHeaders = {
             'Content-Type': 'application/json;charset=UTF-8',
+            'Authori-zation': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwd2QiOiJkNDFkOGNkOThmMDBiMjA0ZTk4MDA5OThlY2Y4NDI3ZSIsImlzcyI6InFsc2hvcC55dW5tZWxsLnZpcCIsImF1ZCI6InFsc2hvcC55dW5tZWxsLnZpcCIsImlhdCI6MTcwNjIzNzAzMCwibmJmIjoxNzA2MjM3MDMwLCJleHAiOjE3MDg4MjkwMzAsImp0aSI6eyJpZCI6NzcwMiwidHlwZSI6ImFwaSJ9fQ.GRp7rTg89zqUm_fEkMnCqKyWe-iRuP4mJcvZLulNHAY',
         }
         if (token) {
           baseHeaders.accesstoken= token
@@ -50,134 +55,113 @@ function ajax({ method = 'POST', url = '', params = {}, token = '', host = "/api
         })
     })
 }
-function getJson({ method = 'POST', url = '', params = {}, token = 'KQCQOLOE2DGBPVJGET675VQSGNY724PDGZDVP3J4M4WHCFZWH2OA1209141',uid = '', host = "/api", headers = {} }) {
+function getJson({ method = 'POST', url = '', params = {}, token = '',uid = '', host = "/api", headers = {} }) {
   return new Promise((resolve, reject)=>{
     ajax({ method, url, params, token, uid, host, headers }).then(data => resolve(data)).catch(err => reject(err))
   })
 }
 
-let detailList = ref([])
-let groupon_id = ref('')
-function getData(grouponid) {
-  getJson({
-    method: 'get',
-    host: '/api',
-    url: '/api/common/getGrouponSpus?groupon_id='+grouponid+'&size=40&page=1&query=&state=1&category=undefined&r='+ Math.random(),
-    token: 'db2e42dafb3e4f4468b43756b7ef9e72',
-    uid:'usr1647753967996159148'
-  }).then((res) => {
-      console.log(res.data.lst);
-      // 详情列表
-      detailList.value  = res.data.lst
-  })
-}
 
-// 请求购物车
+// 请求列表
 let cartList = ref([])
 function getCartList() {
   getJson({
-    method: 'post',
+    method: 'get',
     host: '/api',
-    url: '/ktt_gateway/shopcart/query?xcx_version=3.24.554',
+    url: 'product/detail/483',
   }).then((res) => {
-     cartList.value = res.result.shop_cart_item_list
+     cartList.value = res.data.productValue
+     console.log(cartList.value,111111);
   })
 }
 
-// 选中的商品
-let goods_sku_list = ref([])
-let checkparams = ref({})
-let params2 = ref({})
-function checkuuid(item1){
-  let checksku = []
-  let checkskuList = document.querySelectorAll('.checksku')
-  checkskuList.forEach((item,index)=>{
-    let checked = item.checked
-    if (checked) {
-      let item2= JSON.parse(item.value)
-      checksku.push({
-          "sku_id": item2.sku_id,
-          "goods_id": item2.goods_id,
-          "goods_number": item2.amount
-      })
-    }
-  })
-  goods_sku_list.value = checksku
-  console.log(goods_sku_list.value,11111111);
-  params2.value = {
-      "activity_no": item1.activity_no,
-      "goods_sku_list": goods_sku_list.value
-  }
-  checkparams.value = {
-    "activity_goods_list": [
-        params2.value
-    ],
-    "anti_content": "3akWfxUkMkVEgUSEs9ynf9YnG_yn0dyXpPYX0XaXpBjy0dynY48X0E8O0TqnUzJXpTaXQwUrnF_hjySMf6cwDIxSIzWT7-3k-3tCS-xZytbZzWE57WKT7BK58vW5EAJpS4R_z-1hSh-_8MqVmlHbDpIzV24V28He",
-    "timestamp": 1703833159662,
-    "sign_version": "sv2",
-    "sign": "DC1D819320F787CC036E924127098F28"
-  }
+// 选中项目
+let checkItem = ref({})
+function checkuuid(item) {
+  checkItem.value = item
+  getcartId()
 }
-// 购物车选中的物品
-function checkCart() {
+// 获取id
+let cartId = ref("")
+function getcartId() {
   getJson({
     method: 'post',
     host: '/api',
-    url: '/ktt_order_core/customer/batch_activity/ordering/shopping_cart?xcx_version=3.24.554',
-    params:checkparams.value
-  }).then((res) => {
-
-  })
-}
-
-// 订单选中详情
-function queryorder() {
-  getJson({
-    method: 'post',
-    host: '/api',
-    url: 'ktt_order_core/customer/ordering/query_base_info_on_order_page?xcx_version=3.24.556',
+    url: 'cart/add',
     params:{
-      "activity_no": params2.value.activity_no,
-      "goods_sku_list": params2.value.goods_sku_list,
-      "anti_content": "3akAfx5e-eCEg5SEs9yn19YX5PJX5EqXpg8XYEjn5dyj0dynY48X0E8O0Tqn5zJXpTaXQw5rnU_hjyS-fsoWkIxSIzAT7F3eF3tWSFxVytbVzAEZ7AKT7BKZ8vAZEuJpS4R_zF1hShF_8-qCDlHbkpIzC9jwVjaM",
-      "timestamp": 1703833161666,
-      "sign_version": "sv2",
-      "sign": "BEAAD0EB8BA10A60E5EE8483E44741C4"
+      "productId": "483",
+      "cartNum": 1,
+      "new": 1,
+      "uniqueId": checkItem.value.unique,
+      "virtual_type": 0
     }
   }).then((res) => {
-  })
-}
-// 客户检查创建订单
-function generateorder() {
-  getJson({
-    method: 'post',
-    host: '/api',
-    url: 'ktt_order_core/customer/ordering/generate_biz_order_no?xcx_version=3.24.556',
-    params:{
-      "anti_content": "3akAfx5e-eCEg5SEs9yn19YX5PJX5EqXpg8XYEjn5dyj0dynY48X0E8O0Tqn5zJXpTaXQw5rnU_hjyS-fsoWkIxSIzAT7F3eF3tWSFxVytbVzAEZ7AKT7BKZ8vAZEuJpS4R_zF1hShF_8-qCDlHbkpIzC9jwVjaM",
-      "timestamp": 1703833161666,
-      "sign_version": "sv2",
-      "sign": "BEAAD0EB8BA10A60E5EE8483E44741C4"
-    }
-  }).then((res) => {
+     cartId.value = res.data.cartId
+     console.log(cartId.value,22222222);
+     getType()
   })
 }
 
-// 客户检查创建订单
-function create_order() {
+// 获取type
+let type = ref('')
+function getType() {
   getJson({
     method: 'post',
     host: '/api',
-    url: 'ktt_order_core/customer/ordering/create_order?xcx_version=3.24.556',
-    params:{
-      "anti_content": "3akAfx5e-eCEg5SEs9yn19YX5PJX5EqXpg8XYEjn5dyj0dynY48X0E8O0Tqn5zJXpTaXQw5rnU_hjyS-fsoWkIxSIzAT7F3eF3tWSFxVytbVzAEZ7AKT7BKZ8vAZEuJpS4R_zF1hShF_8-qCDlHbkpIzC9jwVjaM",
-      "timestamp": 1703833161666,
-      "sign_version": "sv2",
-      "sign": "BEAAD0EB8BA10A60E5EE8483E44741C4"
-    }
+    url: 'order/check_shipping',
+    params:{"cartId":cartId.value,"new":1}
   }).then((res) => {
+    type.value = res.data.type
+    confirmOrder()
   })
 }
+
+// 提交订单
+let confirm = ref({})
+function confirmOrder() {
+  getJson({
+    method: 'post',
+    host: '/api',
+    url: 'order/confirm',
+    params:{"cartId":cartId.value,"new":1,"addressId":0,"shipping_type":type.value}
+  }).then((res) => {
+    confirm.value = res.data
+    creatOrder()
+  })
+}
+
+// 创建订单
+function creatOrder() {
+  getJson({
+    method: 'post',
+    host: '/api',
+    url: 'order/create/'+confirm.value.orderKey,
+    params:{
+        "custom_form": cartList.value.custom_form,
+        "real_name": "史文琳",
+        "phone": "16643563081",
+        "addressId": 0,
+        "formId": "",
+        "couponId": 0,
+        "useIntegral": false,
+        "bargainId": cartList.value.bargain_id,
+        "combinationId":  cartList.value.combination_id,
+        "discountId": null,
+        "pinkId": 0,
+        "advanceId": cartList.value.advance_id,
+        "seckill_id": cartList.value.seckill_id,
+        "mark": "",
+        "store_id": 5,
+        "from": "routine",
+        "shipping_type": type.value,
+        "new": 1,
+        "invoice_id": ""
+    }
+  }).then((res) => {
+
+  })
+}
+
 
 
 </script>

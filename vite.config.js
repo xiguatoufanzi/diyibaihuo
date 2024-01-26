@@ -8,7 +8,7 @@ export default defineConfig({
     port: 3000, //本地端口号
     proxy: {
       '/api': {
-        target: 'https://api.pinduoduo.com/api/', //目标url
+        target: 'https://qlshop.yunmell.vip/api/', //目标url
         changeOrigin: true, //支持跨域
         rewrite: (path) => path.replace(/^\/api/, ""), 
           //重写路径,替换/api
