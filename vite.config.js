@@ -16,7 +16,4 @@ export default defineConfig({
     }
   },
   base: "/diyibaihuo/",
-  build: {
-    outDir: "docs"
-  }
 })
