@@ -15,5 +15,5 @@ export default defineConfig({
       },
     }
   },
-  base: "https://github.com/xiguatoufanzi/diyibaihuo/",
+  base: "/diyibaihuo/",
 })
