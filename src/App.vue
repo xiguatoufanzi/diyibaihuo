@@ -13,9 +13,9 @@
         </div> -->
       </div>
     </div>
-    <button @click="getCartList">请求数据1</button>
+    <button @click="getproductsList">请求数据1</button>
     <button @click="queryorder">开始抢购</button>
-    <button @click="generateorder">ewfewf</button>
+    <button @click="getproductsList">ewfewf</button>
   </div>
 </template>
 
@@ -30,7 +30,7 @@ function ajax({ method = 'POST', url = '', params = {}, token = '', host = "/api
     return new Promise((resolve, reject) => {
         let baseHeaders = {
             'Content-Type': 'application/json;charset=UTF-8',
-            'Authori-zation': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwd2QiOiJkNDFkOGNkOThmMDBiMjA0ZTk4MDA5OThlY2Y4NDI3ZSIsImlzcyI6InFsc2hvcC55dW5tZWxsLnZpcCIsImF1ZCI6InFsc2hvcC55dW5tZWxsLnZpcCIsImlhdCI6MTcwNjIzNzAzMCwibmJmIjoxNzA2MjM3MDMwLCJleHAiOjE3MDg4MjkwMzAsImp0aSI6eyJpZCI6NzcwMiwidHlwZSI6ImFwaSJ9fQ.GRp7rTg89zqUm_fEkMnCqKyWe-iRuP4mJcvZLulNHAY',
+            'Authori-zation': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwd2QiOiJkNDFkOGNkOThmMDBiMjA0ZTk4MDA5OThlY2Y4NDI3ZSIsImlzcyI6InFsc2hvcC55dW5tZWxsLnZpcCIsImF1ZCI6InFsc2hvcC55dW5tZWxsLnZpcCIsImlhdCI6MTcxMDc1MjkwMCwibmJmIjoxNzEwNzUyOTAwLCJleHAiOjE3MTMzNDQ5MDAsImp0aSI6eyJpZCI6NzcwMiwidHlwZSI6ImFwaSJ9fQ.rjdHkvfgd2UMXXwHg7hPLm0jFUBZWwTmqU3uWrZRK68',
         }
         if (token) {
           baseHeaders.accesstoken= token
@@ -61,14 +61,25 @@ function getJson({ method = 'POST', url = '', params = {}, token = '',uid = '', 
   })
 }
 
-
-// 请求列表
-let cartList = ref([])
-function getCartList() {
+// 请求分类
+let productsList = ref([])
+function getproductsList() {
   getJson({
     method: 'get',
     host: '/api',
-    url: 'product/detail/483',
+    url: 'products?sid=35&keyword=&priceOrder=&salesOrder=&news=0&page=1&limit=20&cid=0&coupon_category_id=&productId=',
+  }).then((res) => {
+     productsList.value = res.data
+     getCartList(productsList.value[0].id)
+  })
+}
+// 请求列表
+let cartList = ref([])
+function getCartList(id) {
+  getJson({
+    method: 'get',
+    host: '/api',
+    url: 'product/detail/'+id,
   }).then((res) => {
      cartList.value = res.data.productValue
      console.log(cartList.value,111111);
@@ -89,7 +100,7 @@ function getcartId() {
     host: '/api',
     url: 'cart/add',
     params:{
-      "productId": "483",
+      "productId": productsList.value[0].id,
       "cartNum": 1,
       "new": 1,
       "uniqueId": checkItem.value.unique,
