@@ -2,20 +2,30 @@
   <div>
     <div>
       <div>抢哪个！</div>
-      <div v-for="(item,index) in cartList" :key="index">
-        <div v-if="item.stock != 0">
-          <label @click="checkuuid(item)" :for="item.id">{{item.suk}}<input class="checksku" :id="item.id" :value="JSON.stringify(item)" type="checkbox"></label>
-          <span>价格{{item.price}}</span>
+      <button @click="getproductsList">请求数据1</button>
+      <button @click="selsecD">抢购全部D席</button>
+      <div class="twolist">
+        <div style="margin-right:20px;">
+          <div v-for="(item,index) in arr1" :key="index">
+            <div v-if="cartList[item].stock != 0">
+            <!-- <div v-if="cartList[item].stock != 0 && (cartList[item].suk.slice(6,7)=='F')"> -->
+              <label :for="cartList[item].id">{{cartList[item].suk}}<input @click.prevent="checkuuid(cartList[item])" class="checksku" :id="cartList[item].id" :value="JSON.stringify(cartList[item])" type="checkbox"></label>
+              <span>价格{{cartList[item].price}}</span>
+            </div>
+          </div>
         </div>
-        <!-- <div v-for="(item1,index1) in item.sku_detail" :key="item1.goods_id">
-          <label @click="checkuuid(item.sku_list[index1])" :for="item.sku_list[index1].goods_id">{{item1.goods_name}}<input class="checksku" :id="item.sku_list[index1].goods_id" :value="JSON.stringify(item.sku_list[index1])" type="checkbox"></label>
-          <span>价格{{item1.price}}</span>
-        </div> -->
+        <div>
+          <div v-for="(item1,index) in arr2" :key="index">
+            <div v-if="cartList[item1].stock != 0">
+            <!-- <div v-if="cartList[item].stock != 0 && (cartList[item].suk.slice(6,7)=='F')"> -->
+              <label :for="cartList[item1].id">{{cartList[item1].suk}}<input @click.stop="checkuuid(cartList[item1])" class="checksku" :id="cartList[item1].id" :value="JSON.stringify(cartList[item])" type="checkbox"></label>
+              <span>价格{{cartList[item1].price}}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-    <button @click="getproductsList">请求数据1</button>
-    <button @click="queryorder">开始抢购</button>
-    <button @click="getproductsList">ewfewf</button>
+    
   </div>
 </template>
 
@@ -75,14 +85,48 @@ function getproductsList() {
 }
 // 请求列表
 let cartList = ref([])
+let arr1 = ref([])
+let arr2 = ref([])
 function getCartList(id) {
   getJson({
     method: 'get',
     host: '/api',
     url: 'product/detail/'+id,
   }).then((res) => {
-     cartList.value = res.data.productValue
-     console.log(cartList.value,111111);
+    cartList.value = res.data.productValue
+    console.log(cartList.value,111111);
+    arr1.value = []
+    arr2.value = []
+    //日期
+    let attr_value = res.data.productAttr[0].attr_values
+    // 座位号
+    let seat = res.data.productAttr[1].attr_values
+    seat.forEach(item => {
+      let v1 = attr_value[0]+','+item
+      let v2 = attr_value[1]+','+item
+      if (!!cartList.value[v1].stock) {
+        arr1.value.push(v1)
+      }
+      if (!!cartList.value[v2].stock) {
+        arr2.value.push(v2)
+      }
+    });
+  })
+}
+
+// 抢所有D席位
+function selsecD() {
+  arr1.value.forEach(item=>{
+    if (cartList.value[item].suk.slice(6,7)=='D') {
+      checkItem.value = cartList.value[item]
+      getcartId()
+    }
+  })
+  arr2.value.forEach(item=>{
+    if (cartList.value[item].suk.slice(6,7)=='D') {
+      checkItem.value = cartList.value[item]
+      getcartId()
+    }
   })
 }
 
@@ -108,33 +152,32 @@ function getcartId() {
     }
   }).then((res) => {
      cartId.value = res.data.cartId
-     console.log(cartId.value,22222222);
-     getType()
+     getType(cartId.value)
   })
 }
 
 // 获取type
 let type = ref('')
-function getType() {
+function getType(id) {
   getJson({
     method: 'post',
     host: '/api',
     url: 'order/check_shipping',
-    params:{"cartId":cartId.value,"new":1}
+    params:{"cartId":id,"new":1}
   }).then((res) => {
     type.value = res.data.type
-    confirmOrder()
+    confirmOrder(id,type.value)
   })
 }
 
 // 提交订单
 let confirm = ref({})
-function confirmOrder() {
+function confirmOrder(id,type) {
   getJson({
     method: 'post',
     host: '/api',
     url: 'order/confirm',
-    params:{"cartId":cartId.value,"new":1,"addressId":0,"shipping_type":type.value}
+    params:{"cartId":id,"new":1,"addressId":0,"shipping_type":type}
   }).then((res) => {
     confirm.value = res.data
     creatOrder()
@@ -178,6 +221,9 @@ function creatOrder() {
 </script>
 
 <style scoped>
+.twolist{
+  display: flex;
+}
 .logo {
   height: 6em;
   padding: 1.5em;
