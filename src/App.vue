@@ -2,7 +2,9 @@
   <div>
     <div>
       <div>抢哪个！</div>
-      <button @click="getproductsList">请求数据1</button>
+      <button @click="getproductsList">手动请求</button>
+      <button @click="getCartList(productsList[0].id)">请求列表</button>
+      <button @click="autoproductsList">自动请求抢D</button>
       <button @click="selsecD">抢购全部D席</button>
       <div class="twolist">
         <div style="margin-right:20px;">
@@ -40,7 +42,8 @@ function ajax({ method = 'POST', url = '', params = {}, token = '', host = "/api
     return new Promise((resolve, reject) => {
         let baseHeaders = {
             'Content-Type': 'application/json;charset=UTF-8',
-            'Authori-zation': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwd2QiOiJkNDFkOGNkOThmMDBiMjA0ZTk4MDA5OThlY2Y4NDI3ZSIsImlzcyI6InFsc2hvcC55dW5tZWxsLnZpcCIsImF1ZCI6InFsc2hvcC55dW5tZWxsLnZpcCIsImlhdCI6MTcxMDc1MjkwMCwibmJmIjoxNzEwNzUyOTAwLCJleHAiOjE3MTMzNDQ5MDAsImp0aSI6eyJpZCI6NzcwMiwidHlwZSI6ImFwaSJ9fQ.rjdHkvfgd2UMXXwHg7hPLm0jFUBZWwTmqU3uWrZRK68',
+            'Authori-zation': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwd2QiOiJkNDFkOGNkOThmMDBiMjA0ZTk4MDA5OThlY2Y4NDI3ZSIsImlzcyI6InFsc2hvcC55dW5tZWxsLnZpcCIsImF1ZCI6InFsc2hvcC55dW5tZWxsLnZpcCIsImlhdCI6MTcxMTA4MDU0NCwibmJmIjoxNzExMDgwNTQ0LCJleHAiOjE3MTM2NzI1NDQsImp0aSI6eyJpZCI6NzcwMiwidHlwZSI6ImFwaSJ9fQ.Ew8_L1gLhfqrvQZTCqv__hfbPMq3fpFswyaOaxWqscA',
+            
         }
         if (token) {
           baseHeaders.accesstoken= token
@@ -71,8 +74,30 @@ function getJson({ method = 'POST', url = '', params = {}, token = '',uid = '', 
   })
 }
 
-// 请求分类
 let productsList = ref([])
+// 设定指定时间抢D席位
+function autoproductsList() {
+  // 设定抢购时间
+  let time = 1711080000000
+  // 定时器检测
+  let timer = setInterval(() => {
+    console.log('检测中');
+    if (new Date().getTime() >= time) {
+      clearInterval(timer)
+      getJson({
+        method: 'get',
+        host: '/api',
+        url: 'products?sid=35&keyword=&priceOrder=&salesOrder=&news=0&page=1&limit=20&cid=0&coupon_category_id=&productId=',
+      }).then(async (res) => {
+        productsList.value = res.data
+        await getCartList(productsList.value[0].id)
+        await selsecD()
+      })
+    }
+  }, 10);
+  
+}
+// 手动请求
 function getproductsList() {
   getJson({
     method: 'get',
@@ -119,13 +144,13 @@ function selsecD() {
   arr1.value.forEach(item=>{
     if (cartList.value[item].suk.slice(6,7)=='D') {
       checkItem.value = cartList.value[item]
-      getcartId()
+      getcartId(checkItem)
     }
   })
   arr2.value.forEach(item=>{
     if (cartList.value[item].suk.slice(6,7)=='D') {
       checkItem.value = cartList.value[item]
-      getcartId()
+      getcartId(checkItem)
     }
   })
 }
@@ -134,11 +159,11 @@ function selsecD() {
 let checkItem = ref({})
 function checkuuid(item) {
   checkItem.value = item
-  getcartId()
+  getcartId(checkItem)
 }
 // 获取id
 let cartId = ref("")
-function getcartId() {
+function getcartId(checkItem) {
   getJson({
     method: 'post',
     host: '/api',
@@ -180,30 +205,30 @@ function confirmOrder(id,type) {
     params:{"cartId":id,"new":1,"addressId":0,"shipping_type":type}
   }).then((res) => {
     confirm.value = res.data
-    creatOrder()
+    creatOrder(confirm.value)
   })
 }
 
 // 创建订单
-function creatOrder() {
+function creatOrder(confirm) {
   getJson({
     method: 'post',
     host: '/api',
-    url: 'order/create/'+confirm.value.orderKey,
+    url: 'order/create/'+confirm.orderKey,
     params:{
-        "custom_form": cartList.value.custom_form,
+        "custom_form": confirm.custom_form,
         "real_name": "史文琳",
         "phone": "16643563081",
         "addressId": 0,
         "formId": "",
         "couponId": 0,
         "useIntegral": false,
-        "bargainId": cartList.value.bargain_id,
-        "combinationId":  cartList.value.combination_id,
+        "bargainId": confirm.bargain_id,
+        "combinationId":  confirm.combination_id,
         "discountId": null,
         "pinkId": 0,
-        "advanceId": cartList.value.advance_id,
-        "seckill_id": cartList.value.seckill_id,
+        "advanceId": confirm.advance_id,
+        "seckill_id": confirm.seckill_id,
         "mark": "",
         "store_id": 5,
         "from": "routine",
