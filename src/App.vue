@@ -3,28 +3,21 @@
     <div>
       <div>抢哪个！</div>
       <button @click="getproductsList">手动请求</button>
-      <button @click="getCartList(productsList[0].id)">请求列表</button>
+      <!-- <button @click="getCartList(productsList[0].id)">请求列表</button> -->
+      <button @click="getCartList('453')">请求列表</button>
       <button @click="autoproductsList">自动请求抢D</button>
       <button @click="selsecD">抢购全部D席</button>
       <div class="twolist">
-        <div style="margin-right:20px;">
-          <div v-for="(item,index) in arr1" :key="index">
-            <div v-if="cartList[item].stock != 0">
+        <div style="margin-right:20px;" v-for="(item,index) in attr_value" :key="index">
+          <div v-for="(item1,index1) in seat" :key="index1">
+            <div v-if="cartList[item+','+item1].stock != 0">
             <!-- <div v-if="cartList[item].stock != 0 && (cartList[item].suk.slice(6,7)=='F')"> -->
-              <label :for="cartList[item].id">{{cartList[item].suk}}<input @click.prevent="checkuuid(cartList[item])" class="checksku" :id="cartList[item].id" :value="JSON.stringify(cartList[item])" type="checkbox"></label>
-              <span>价格{{cartList[item].price}}</span>
+              <label :for="cartList[item+','+item1].id">{{cartList[item+','+item1].suk}}<input @click.prevent="checkuuid(cartList[item+','+item1])" class="checksku" :id="cartList[item+','+item1].id" :value="JSON.stringify(cartList[item+','+item1])" type="checkbox"></label>
+              <span>价格{{cartList[item+','+item1].price}}</span>
             </div>
           </div>
         </div>
-        <div>
-          <div v-for="(item1,index) in arr2" :key="index">
-            <div v-if="cartList[item1].stock != 0">
-            <!-- <div v-if="cartList[item].stock != 0 && (cartList[item].suk.slice(6,7)=='F')"> -->
-              <label :for="cartList[item1].id">{{cartList[item1].suk}}<input @click.stop="checkuuid(cartList[item1])" class="checksku" :id="cartList[item1].id" :value="JSON.stringify(cartList[item])" type="checkbox"></label>
-              <span>价格{{cartList[item1].price}}</span>
-            </div>
-          </div>
-        </div>
+ 
       </div>
     </div>
     
@@ -42,8 +35,7 @@ function ajax({ method = 'POST', url = '', params = {}, token = '', host = "/api
     return new Promise((resolve, reject) => {
         let baseHeaders = {
             'Content-Type': 'application/json;charset=UTF-8',
-            'Authori-zation': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwd2QiOiJkNDFkOGNkOThmMDBiMjA0ZTk4MDA5OThlY2Y4NDI3ZSIsImlzcyI6InFsc2hvcC55dW5tZWxsLnZpcCIsImF1ZCI6InFsc2hvcC55dW5tZWxsLnZpcCIsImlhdCI6MTcxMTA4MDU0NCwibmJmIjoxNzExMDgwNTQ0LCJleHAiOjE3MTM2NzI1NDQsImp0aSI6eyJpZCI6NzcwMiwidHlwZSI6ImFwaSJ9fQ.Ew8_L1gLhfqrvQZTCqv__hfbPMq3fpFswyaOaxWqscA',
-            
+            'Authori-zation': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwd2QiOiJkNDFkOGNkOThmMDBiMjA0ZTk4MDA5OThlY2Y4NDI3ZSIsImlzcyI6InFsc2hvcC55dW5tZWxsLnZpcCIsImF1ZCI6InFsc2hvcC55dW5tZWxsLnZpcCIsImlhdCI6MTcxMjI5MDE0MCwibmJmIjoxNzEyMjkwMTQwLCJleHAiOjE3MTQ4ODIxNDAsImp0aSI6eyJpZCI6NzcwMiwidHlwZSI6ImFwaSJ9fQ.FH0k6zIbrEkaNb_oWyowf1gAtqbIw8Tfs8WdGIQyhsI',
         }
         if (token) {
           baseHeaders.accesstoken= token
@@ -78,21 +70,30 @@ let productsList = ref([])
 // 设定指定时间抢D席位
 function autoproductsList() {
   // 设定抢购时间
-  let time = 1711080000000
+  let time = 1712289600000
   // 定时器检测
-  let timer = setInterval(() => {
+  // let timer = setInterval(() => {
+  //   console.log('检测中');
+  //   if (new Date().getTime() >= time) {
+  //     clearInterval(timer)
+  //     getJson({
+  //       method: 'get',
+  //       host: '/api',
+  //       url: 'products?sid=35&keyword=&priceOrder=&salesOrder=&news=0&page=1&limit=20&cid=0&coupon_category_id=&productId=',
+  //     }).then(async (res) => {
+  //       productsList.value = res.data
+  //       await getCartList(productsList.value[0].id)
+  //       await selsecD()
+  //     })
+  //   }
+  // }, 10);
+
+  let timer = setInterval(async () => {
     console.log('检测中');
     if (new Date().getTime() >= time) {
       clearInterval(timer)
-      getJson({
-        method: 'get',
-        host: '/api',
-        url: 'products?sid=35&keyword=&priceOrder=&salesOrder=&news=0&page=1&limit=20&cid=0&coupon_category_id=&productId=',
-      }).then(async (res) => {
-        productsList.value = res.data
-        await getCartList(productsList.value[0].id)
-        await selsecD()
-      })
+      await getCartList('453')
+      await selsecD()
     }
   }, 10);
   
@@ -110,8 +111,9 @@ function getproductsList() {
 }
 // 请求列表
 let cartList = ref([])
-let arr1 = ref([])
-let arr2 = ref([])
+let attr_value = ref([])
+let seat = ref([])
+let arr3 = ref([])
 function getCartList(id) {
   getJson({
     method: 'get',
@@ -119,39 +121,33 @@ function getCartList(id) {
     url: 'product/detail/'+id,
   }).then((res) => {
     cartList.value = res.data.productValue
-    console.log(cartList.value,111111);
-    arr1.value = []
-    arr2.value = []
     //日期
-    let attr_value = res.data.productAttr[0].attr_values
+    attr_value.value = res.data.productAttr[0].attr_values
     // 座位号
-    let seat = res.data.productAttr[1].attr_values
-    seat.forEach(item => {
-      let v1 = attr_value[0]+','+item
-      let v2 = attr_value[1]+','+item
-      if (!!cartList.value[v1].stock) {
-        arr1.value.push(v1)
-      }
-      if (!!cartList.value[v2].stock) {
-        arr2.value.push(v2)
-      }
-    });
+    seat.value = res.data.productAttr[1].attr_values
+    // seat.forEach(item => {
+    //   let v1 = attr_value[0]+','+item
+    //   let v2 = attr_value[1]+','+item
+    //   if (!!cartList.value[v1].stock) {
+    //     arr1.value.push(v1)
+    //   }
+    //   if (!!cartList.value[v2].stock) {
+    //     arr2.value.push(v2)
+    //   }
+    // });
+  
   })
 }
 
 // 抢所有D席位
 function selsecD() {
-  arr1.value.forEach(item=>{
-    if (cartList.value[item].suk.slice(6,7)=='D') {
-      checkItem.value = cartList.value[item]
-      getcartId(checkItem)
-    }
-  })
-  arr2.value.forEach(item=>{
-    if (cartList.value[item].suk.slice(6,7)=='D') {
-      checkItem.value = cartList.value[item]
-      getcartId(checkItem)
-    }
+  attr_value.value.forEach(item=>{
+    seat.value.forEach(item1=>{
+      if (cartList.value[item+','+item1].suk.slice(6,7)=='D' && cartList.value[item+','+item1].stock != 0) {
+        checkItem.value = cartList.value[item+','+item1]
+        getcartId(checkItem)
+      }
+    })
   })
 }
 
@@ -169,7 +165,8 @@ function getcartId(checkItem) {
     host: '/api',
     url: 'cart/add',
     params:{
-      "productId": productsList.value[0].id,
+      // "productId": productsList.value[0].id,
+      "productId": '453',
       "cartNum": 1,
       "new": 1,
       "uniqueId": checkItem.value.unique,
