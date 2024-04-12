@@ -35,7 +35,7 @@ function ajax({ method = 'POST', url = '', params = {}, token = '', host = "/api
     return new Promise((resolve, reject) => {
         let baseHeaders = {
             'Content-Type': 'application/json;charset=UTF-8',
-            'Authori-zation': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwd2QiOiJkNDFkOGNkOThmMDBiMjA0ZTk4MDA5OThlY2Y4NDI3ZSIsImlzcyI6InFsc2hvcC55dW5tZWxsLnZpcCIsImF1ZCI6InFsc2hvcC55dW5tZWxsLnZpcCIsImlhdCI6MTcxMjI5MDE0MCwibmJmIjoxNzEyMjkwMTQwLCJleHAiOjE3MTQ4ODIxNDAsImp0aSI6eyJpZCI6NzcwMiwidHlwZSI6ImFwaSJ9fQ.FH0k6zIbrEkaNb_oWyowf1gAtqbIw8Tfs8WdGIQyhsI',
+            'Authori-zation': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwd2QiOiJkNDFkOGNkOThmMDBiMjA0ZTk4MDA5OThlY2Y4NDI3ZSIsImlzcyI6InFsc2hvcC55dW5tZWxsLnZpcCIsImF1ZCI6InFsc2hvcC55dW5tZWxsLnZpcCIsImlhdCI6MTcxMTY4MDAzOCwibmJmIjoxNzExNjgwMDM4LCJleHAiOjE3MTQyNzIwMzgsImp0aSI6eyJpZCI6NzcwMiwidHlwZSI6ImFwaSJ9fQ.cXGQEGDfVnCIxrelYsHMcAex0ZSlChkonhM7k3f2Tng',
         }
         if (token) {
           baseHeaders.accesstoken= token
@@ -141,13 +141,15 @@ function getCartList(id) {
 
 // 抢所有D席位
 function selsecD() {
-  attr_value.value.forEach(item=>{
-    seat.value.forEach(item1=>{
-      if (cartList.value[item+','+item1].suk.slice(6,7)=='D' && cartList.value[item+','+item1].stock != 0) {
-        checkItem.value = cartList.value[item+','+item1]
-        getcartId(checkItem)
-      }
-    })
+  seat.value.forEach(item1=>{
+    if (item1.slice(0,1)=='D') {
+      attr_value.value.forEach(item=>{
+        if (cartList.value[item+','+item1].stock != 0) {
+          checkItem.value = cartList.value[item+','+item1]
+          getcartId(checkItem)
+        }
+      })
+    }
   })
 }
 
@@ -167,9 +169,7 @@ function getcartId(checkItem) {
     params:{
       // "productId": productsList.value[0].id,
       "productId": '453',
-      "cartNum": 1,
-      "new": 1,
-      "uniqueId": checkItem.value.unique,
+    "uniqueId": checkItem.value.unique,
       "virtual_type": 0
     }
   }).then((res) => {
@@ -185,7 +185,7 @@ function getType(id) {
     method: 'post',
     host: '/api',
     url: 'order/check_shipping',
-    params:{"cartId":id,"new":1}
+    params:{"cartId":id,"new":0}
   }).then((res) => {
     type.value = res.data.type
     confirmOrder(id,type.value)
@@ -199,7 +199,7 @@ function confirmOrder(id,type) {
     method: 'post',
     host: '/api',
     url: 'order/confirm',
-    params:{"cartId":id,"new":1,"addressId":0,"shipping_type":type}
+    params:{"cartId":id,"new":0,"addressId":0,"shipping_type":type}
   }).then((res) => {
     confirm.value = res.data
     creatOrder(confirm.value)
@@ -230,7 +230,7 @@ function creatOrder(confirm) {
         "store_id": 5,
         "from": "routine",
         "shipping_type": type.value,
-        "new": 1,
+        "new": 0,
         "invoice_id": ""
     }
   }).then((res) => {
