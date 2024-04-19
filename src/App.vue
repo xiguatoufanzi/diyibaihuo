@@ -3,10 +3,14 @@
     <div>
       <div>抢哪个！</div>
       <button @click="getproductsList">手动请求</button>
-      <!-- <button @click="getCartList(productsList[0].id)">请求列表</button> -->
-      <button @click="getCartList('453')">请求列表</button>
-      <button @click="autoproductsList">自动请求抢D</button>
-      <button @click="selsecD">抢购全部D席</button>
+      <button @click="getCartList()">请求周末列表</button>
+      <button @click="autoproductsList">自动请求周末抢D</button>
+      <button @click="selsecD">抢购周末全部D席</button>
+      <div>
+        <div v-for="(item,index) in productsList" :key="index">
+           <label :for="item.id">{{item.store_name}} <input @click.prevent="checkList(item.id)" class="checksku" :id="item.id" :value="item.id" type="checkbox"></label>
+        </div>
+      </div>
       <div class="twolist">
         <div style="margin-right:20px;" v-for="(item,index) in attr_value" :key="index">
           <div v-for="(item1,index1) in seat" :key="index1">
@@ -35,7 +39,7 @@ function ajax({ method = 'POST', url = '', params = {}, token = '', host = "/api
     return new Promise((resolve, reject) => {
         let baseHeaders = {
             'Content-Type': 'application/json;charset=UTF-8',
-            'Authori-zation': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwd2QiOiJkNDFkOGNkOThmMDBiMjA0ZTk4MDA5OThlY2Y4NDI3ZSIsImlzcyI6InFsc2hvcC55dW5tZWxsLnZpcCIsImF1ZCI6InFsc2hvcC55dW5tZWxsLnZpcCIsImlhdCI6MTcxMTY4MDAzOCwibmJmIjoxNzExNjgwMDM4LCJleHAiOjE3MTQyNzIwMzgsImp0aSI6eyJpZCI6NzcwMiwidHlwZSI6ImFwaSJ9fQ.cXGQEGDfVnCIxrelYsHMcAex0ZSlChkonhM7k3f2Tng',
+            'Authori-zation': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwd2QiOiJkNDFkOGNkOThmMDBiMjA0ZTk4MDA5OThlY2Y4NDI3ZSIsImlzcyI6InFsc2hvcC55dW5tZWxsLnZpcCIsImF1ZCI6InFsc2hvcC55dW5tZWxsLnZpcCIsImlhdCI6MTcxMzUwMjk0NSwibmJmIjoxNzEzNTAyOTQ1LCJleHAiOjE3MTYwOTQ5NDUsImp0aSI6eyJpZCI6NzcwMiwidHlwZSI6ImFwaSJ9fQ.erbmY5q8uwH4tXoQGsSKilrpAQhtyEmcHjYxb96owvA',
         }
         if (token) {
           baseHeaders.accesstoken= token
@@ -92,8 +96,9 @@ function autoproductsList() {
     console.log('检测中');
     if (new Date().getTime() >= time) {
       clearInterval(timer)
-      await getCartList('453')
-      await selsecD()
+      await getproductsList()
+      // await getCartList()
+      // await selsecD()
     }
   }, 10);
   
@@ -106,36 +111,37 @@ function getproductsList() {
     url: 'products?sid=35&keyword=&priceOrder=&salesOrder=&news=0&page=1&limit=20&cid=0&coupon_category_id=&productId=',
   }).then((res) => {
      productsList.value = res.data
-     getCartList(productsList.value[0].id)
   })
 }
+let useId = ref('')
+// 选择哪天摊位链接
+function checkList(id){
+  useId.value = id
+  getCartList()
+}
+
 // 请求列表
 let cartList = ref([])
 let attr_value = ref([])
 let seat = ref([])
 let arr3 = ref([])
-function getCartList(id) {
+function getCartList() {
+  let url = 'product/detail/453'
+  if (useId.value) {
+    url = 'product/detail/'+useId.value
+  }
   getJson({
     method: 'get',
     host: '/api',
-    url: 'product/detail/'+id,
+    url,
   }).then((res) => {
     cartList.value = res.data.productValue
     //日期
     attr_value.value = res.data.productAttr[0].attr_values
     // 座位号
-    seat.value = res.data.productAttr[1].attr_values
-    // seat.forEach(item => {
-    //   let v1 = attr_value[0]+','+item
-    //   let v2 = attr_value[1]+','+item
-    //   if (!!cartList.value[v1].stock) {
-    //     arr1.value.push(v1)
-    //   }
-    //   if (!!cartList.value[v2].stock) {
-    //     arr2.value.push(v2)
-    //   }
-    // });
-  
+    if (res.data.productAttr[1]) {
+      seat.value = res.data.productAttr[1].attr_values
+    }
   })
 }
 
@@ -167,8 +173,7 @@ function getcartId(checkItem) {
     host: '/api',
     url: 'cart/add',
     params:{
-      // "productId": productsList.value[0].id,
-      "productId": '453',
+    "productId": checkItem.value.product_id,
     "uniqueId": checkItem.value.unique,
       "virtual_type": 0
     }
