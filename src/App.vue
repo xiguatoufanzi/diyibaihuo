@@ -3,9 +3,10 @@
     <div>
       <div>抢哪个！</div>
       <button @click="getproductsList">手动请求</button>
-      <button @click="getCartList()">请求周末列表</button>
-      <button @click="autoproductsList">自动请求周末抢D</button>
-      <button @click="selsecD">抢购周末全部D席</button>
+      <button @click="getCartList()">请求列表</button>
+      <button @click="autoproductsList">自动请求单天抢D</button>
+      <button @click="selsecD">抢购单天全部D席</button>
+      <button @click="changeNew">切换new</button>
       <div>
         <div v-for="(item,index) in productsList" :key="index">
            <label :for="item.id">{{item.store_name}} <input @click.prevent="checkList(item.id)" class="checksku" :id="item.id" :value="item.id" type="checkbox"></label>
@@ -69,7 +70,14 @@ function getJson({ method = 'POST', url = '', params = {}, token = '',uid = '', 
     ajax({ method, url, params, token, uid, host, headers }).then(data => resolve(data)).catch(err => reject(err))
   })
 }
-
+let newType = ref(0)
+function changeNew() {
+  if (newType.value == 0) {
+    newType.value = 1
+  }else{
+    newType.value = 0
+  }
+}
 let productsList = ref([])
 // 设定指定时间抢D席位
 function autoproductsList() {
@@ -190,7 +198,7 @@ function getType(id) {
     method: 'post',
     host: '/api',
     url: 'order/check_shipping',
-    params:{"cartId":id,"new":0}
+    params:{"cartId":id,"new":newType.value}
   }).then((res) => {
     type.value = res.data.type
     confirmOrder(id,type.value)
@@ -204,7 +212,7 @@ function confirmOrder(id,type) {
     method: 'post',
     host: '/api',
     url: 'order/confirm',
-    params:{"cartId":id,"new":0,"addressId":0,"shipping_type":type}
+    params:{"cartId":id,"new":newType.value,"addressId":0,"shipping_type":type}
   }).then((res) => {
     confirm.value = res.data
     creatOrder(confirm.value)
@@ -235,7 +243,7 @@ function creatOrder(confirm) {
         "store_id": 5,
         "from": "routine",
         "shipping_type": type.value,
-        "new": 0,
+        "new": newType.value,
         "invoice_id": ""
     }
   }).then((res) => {
