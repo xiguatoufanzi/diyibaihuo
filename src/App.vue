@@ -2,11 +2,18 @@
   <div>
     <div>
       <div>抢哪个！</div>
+      <div >
+        座位id<input type="text" v-model="codeId">
+      </div>
+      <button @click="monitoring">监控回流</button>
       <button @click="getproductsList">手动请求</button>
       <button @click="getCartList()">请求列表</button>
       <button @click="autoproductsList">自动请求单天抢D</button>
       <button @click="selsecD">抢购单天全部D席</button>
       <button @click="changeNew">切换new</button>
+      <button @click="shopCar">请求购物车</button>
+      <button @click="confirmOrder1">手动提交订单</button>
+      <button @click="creatOrder1">手动创建订单</button>
       <div>
         <div v-for="(item,index) in productsList" :key="index">
            <label :for="item.id">{{item.store_name}} <input @click.prevent="checkList(item.id)" class="checksku" :id="item.id" :value="item.id" type="checkbox"></label>
@@ -15,8 +22,8 @@
       <div class="twolist">
         <div style="margin-right:20px;" v-for="(item,index) in attr_value" :key="index">
           <div v-for="(item1,index1) in seat" :key="index1">
-            <div v-if="cartList[item+','+item1].stock != 0">
-            <!-- <div v-if="cartList[item].stock != 0 && (cartList[item].suk.slice(6,7)=='F')"> -->
+            <div v-if="cartList[item+','+item1].stock != 0 && (cartList[item+','+item1].suk.slice(6,7)=='A' || cartList[item+','+item1].suk.slice(6,7)=='B' || cartList[item+','+item1].suk.slice(6,7)=='C' || cartList[item+','+item1].suk.slice(6,7)=='D' || cartList[item+','+item1].suk.slice(6,7)=='E' || cartList[item+','+item1].suk.slice(6,7)=='F')">
+            <!-- <div > -->
               <label :for="cartList[item+','+item1].id">{{cartList[item+','+item1].suk}}<input @click.prevent="checkuuid(cartList[item+','+item1])" class="checksku" :id="cartList[item+','+item1].id" :value="JSON.stringify(cartList[item+','+item1])" type="checkbox"></label>
               <span>价格{{cartList[item+','+item1].price}}</span>
             </div>
@@ -40,7 +47,7 @@ function ajax({ method = 'POST', url = '', params = {}, token = '', host = "/api
     return new Promise((resolve, reject) => {
         let baseHeaders = {
             'Content-Type': 'application/json;charset=UTF-8',
-            'Authori-zation': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwd2QiOiJkNDFkOGNkOThmMDBiMjA0ZTk4MDA5OThlY2Y4NDI3ZSIsImlzcyI6InFsc2hvcC55dW5tZWxsLnZpcCIsImF1ZCI6InFsc2hvcC55dW5tZWxsLnZpcCIsImlhdCI6MTcxMzUwMjk0NSwibmJmIjoxNzEzNTAyOTQ1LCJleHAiOjE3MTYwOTQ5NDUsImp0aSI6eyJpZCI6NzcwMiwidHlwZSI6ImFwaSJ9fQ.erbmY5q8uwH4tXoQGsSKilrpAQhtyEmcHjYxb96owvA',
+            'Authori-zation': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwd2QiOiJkNDFkOGNkOThmMDBiMjA0ZTk4MDA5OThlY2Y4NDI3ZSIsImlzcyI6InFsc2hvcC55dW5tZWxsLnZpcCIsImF1ZCI6InFsc2hvcC55dW5tZWxsLnZpcCIsImlhdCI6MTcxNzEyNzM2NywibmJmIjoxNzE3MTI3MzY3LCJleHAiOjE3MTk3MTkzNjcsImp0aSI6eyJpZCI6NzcwMiwidHlwZSI6ImFwaSJ9fQ.CPsARHIfCG66s8qE6Y1EUqEenBIwMThCEQAYTgRppiQ',
         }
         if (token) {
           baseHeaders.accesstoken= token
@@ -82,7 +89,7 @@ let productsList = ref([])
 // 设定指定时间抢D席位
 function autoproductsList() {
   // 设定抢购时间
-  let time = 1712289600000
+  let time = 1717128001000
   // 定时器检测
   // let timer = setInterval(() => {
   //   console.log('检测中');
@@ -138,19 +145,29 @@ function getCartList() {
   if (useId.value) {
     url = 'product/detail/'+useId.value
   }
-  getJson({
-    method: 'get',
-    host: '/api',
-    url,
-  }).then((res) => {
-    cartList.value = res.data.productValue
-    //日期
-    attr_value.value = res.data.productAttr[0].attr_values
-    // 座位号
-    if (res.data.productAttr[1]) {
-      seat.value = res.data.productAttr[1].attr_values
+
+  let time = 1717128001000
+  let timer = setInterval(async () => {
+    console.log('检测中');
+    if (new Date().getTime() >= time) {
+      clearInterval(timer)
+       getJson({
+        method: 'get',
+        host: '/api',
+        url,
+      }).then((res) => {
+        cartList.value = res.data.productValue
+        //日期
+        attr_value.value = res.data.productAttr[0].attr_values
+        // 座位号
+        if (res.data.productAttr[1]) {
+          seat.value = res.data.productAttr[1].attr_values
+        }
+      })
     }
-  })
+  }, 10);
+
+ 
 }
 
 // 抢所有D席位
@@ -192,7 +209,7 @@ function getcartId(checkItem) {
 }
 
 // 获取type
-let type = ref('')
+let type = ref(2)
 function getType(id) {
   getJson({
     method: 'post',
@@ -251,6 +268,106 @@ function creatOrder(confirm) {
   })
 }
 
+// 手动提交订单
+let codeId = ref('')
+let confirmObj = ref('')
+function confirmOrder1() {
+  getJson({
+    method: 'post',
+    host: '/api',
+    url: 'order/confirm',
+    params:{"cartId":codeId.value,"new":newType.value,"addressId":0,"shipping_type":type.value}
+  }).then((res) => {
+    confirmObj.value = res.data
+    creatOrder1(confirmObj.value)
+  })
+}
+
+// 手动创建订单
+function creatOrder1(confirmObj) {
+  getJson({
+    method: 'post',
+    host: '/api',
+    url: 'order/create/'+confirmObj.orderKey,
+    params:{
+        "custom_form": confirmObj.custom_form,
+        "real_name": "史文琳",
+        "phone": "16643563081",
+        "addressId": 0,
+        "formId": "",
+        "couponId": 0,
+        "useIntegral": false,
+        "bargainId": confirmObj.bargain_id,
+        "combinationId":  confirmObj.combination_id,
+        "discountId": null,
+        "pinkId": 0,
+        "advanceId": confirmObj.advance_id,
+        "seckill_id": confirmObj.seckill_id,
+        "mark": "",
+        "store_id": 5,
+        "from": "routine",
+        "shipping_type": type.value,
+        "new": newType.value,
+        "invoice_id": ""
+    }
+  }).then((res) => {
+
+  })
+}
+
+//请求购物车
+function shopCar() {
+  getJson({
+    method: 'get',
+    host: '/api',
+    url: '/cart/count?numType=0',
+  }).then((res) => {
+  })
+}
+
+// 监控回流
+function monitoring() {
+  setInterval(() => {
+    let url = 'product/detail/453'
+    if (useId.value) {
+      url = 'product/detail/'+useId.value
+    }
+
+    let time = 1717128001000
+    let timer = setInterval(async () => {
+      console.log('检测中');
+      if (new Date().getTime() >= time) {
+        clearInterval(timer)
+        getJson({
+          method: 'get',
+          host: '/api',
+          url,
+        }).then((res) => {
+          cartList.value = res.data.productValue
+          //日期
+          attr_value.value = res.data.productAttr[0].attr_values
+          // 座位号
+          if (res.data.productAttr[1]) {
+            seat.value = res.data.productAttr[1].attr_values
+          }
+
+          seat.value.forEach(item1=>{
+          if (item1.slice(0,1)=='A' || item1.slice(0,1)=='B' || item1.slice(0,1)=='C' || item1.slice(0,1)=='D' || item1.slice(0,1)=='E' || item1.slice(0,1)=='F') {
+            attr_value.value.forEach(item=>{
+              if (cartList.value[item+','+item1].stock != 0) {
+                checkItem.value = cartList.value[item+','+item1]
+                getcartId(checkItem)
+              }
+            })
+          }
+        })
+
+        })
+      }
+    }, 10);
+
+  }, 1000);
+}
 
 
 </script>
