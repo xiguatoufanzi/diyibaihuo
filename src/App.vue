@@ -11,6 +11,7 @@
       <button @click="autoproductsList">自动请求单天抢D</button>
       <button @click="selsecD">抢购单天全部D席</button>
       <button @click="changeNew">切换new</button>
+      <button @click="getType">获取type</button>
       <button @click="shopCar">请求购物车</button>
       <button @click="confirmOrder1">手动提交订单</button>
       <button @click="creatOrder1">手动创建订单</button>
@@ -29,8 +30,15 @@
             </div>
           </div>
         </div>
- 
+     
       </div>
+         <!-- 购物车 -->
+        <div v-for="(item,index) in shopList" :key="index">
+          <div v-if="item.productInfo.attrInfo.stock != 0">
+            <span>名称{{item.productInfo.attrInfo.suk}}</span>
+            <span>    id{{item.id}}</span>
+          </div>
+        </div>
     </div>
     
   </div>
@@ -47,7 +55,7 @@ function ajax({ method = 'POST', url = '', params = {}, token = '', host = "/api
     return new Promise((resolve, reject) => {
         let baseHeaders = {
             'Content-Type': 'application/json;charset=UTF-8',
-            'Authori-zation': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwd2QiOiJkNDFkOGNkOThmMDBiMjA0ZTk4MDA5OThlY2Y4NDI3ZSIsImlzcyI6InFsc2hvcC55dW5tZWxsLnZpcCIsImF1ZCI6InFsc2hvcC55dW5tZWxsLnZpcCIsImlhdCI6MTcxNzEyNzM2NywibmJmIjoxNzE3MTI3MzY3LCJleHAiOjE3MTk3MTkzNjcsImp0aSI6eyJpZCI6NzcwMiwidHlwZSI6ImFwaSJ9fQ.CPsARHIfCG66s8qE6Y1EUqEenBIwMThCEQAYTgRppiQ',
+            'Authori-zation': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwd2QiOiJkNDFkOGNkOThmMDBiMjA0ZTk4MDA5OThlY2Y4NDI3ZSIsImlzcyI6InFsc2hvcC55dW5tZWxsLnZpcCIsImF1ZCI6InFsc2hvcC55dW5tZWxsLnZpcCIsImlhdCI6MTcxNzcyNzA5OCwibmJmIjoxNzE3NzI3MDk4LCJleHAiOjE3MjAzMTkwOTgsImp0aSI6eyJpZCI6NzcwMiwidHlwZSI6ImFwaSJ9fQ.XIwnCshoDJs9ocboS1ltfHrxsTGpLsFKHt675Xf5I2k',
         }
         if (token) {
           baseHeaders.accesstoken= token
@@ -89,7 +97,7 @@ let productsList = ref([])
 // 设定指定时间抢D席位
 function autoproductsList() {
   // 设定抢购时间
-  let time = 1717128001000
+  let time = 1717732800000
   // 定时器检测
   // let timer = setInterval(() => {
   //   console.log('检测中');
@@ -146,7 +154,7 @@ function getCartList() {
     url = 'product/detail/'+useId.value
   }
 
-  let time = 1717128001000
+  let time = 1717732800000
   let timer = setInterval(async () => {
     console.log('检测中');
     if (new Date().getTime() >= time) {
@@ -204,32 +212,33 @@ function getcartId(checkItem) {
     }
   }).then((res) => {
      cartId.value = res.data.cartId
-     getType(cartId.value)
+    //  getType(cartId.value)
+    confirmOrder(cartId.value)
   })
 }
 
 // 获取type
 let type = ref(2)
-function getType(id) {
+function getType() {
   getJson({
     method: 'post',
     host: '/api',
     url: 'order/check_shipping',
-    params:{"cartId":id,"new":newType.value}
+    params:{"cartId":cartId.value,"new":newType.value}
   }).then((res) => {
     type.value = res.data.type
-    confirmOrder(id,type.value)
+    confirmOrder(cartId.value)
   })
 }
 
 // 提交订单
 let confirm = ref({})
-function confirmOrder(id,type) {
+function confirmOrder(id) {
   getJson({
     method: 'post',
     host: '/api',
     url: 'order/confirm',
-    params:{"cartId":id,"new":newType.value,"addressId":0,"shipping_type":type}
+    params:{"cartId":id,"new":newType.value,"addressId":0,"shipping_type":type.value}
   }).then((res) => {
     confirm.value = res.data
     creatOrder(confirm.value)
@@ -316,12 +325,15 @@ function creatOrder1(confirmObj) {
 }
 
 //请求购物车
+let shopList = ref([])
 function shopCar() {
   getJson({
     method: 'get',
     host: '/api',
-    url: '/cart/count?numType=0',
+    url: '/cart/list?page=1&limit=50&status=1',
   }).then((res) => {
+    shopList.value = res.data.valid
+    console.log(shopList.value);
   })
 }
 
@@ -333,7 +345,7 @@ function monitoring() {
       url = 'product/detail/'+useId.value
     }
 
-    let time = 1717128001000
+    let time = 1717732800000
     let timer = setInterval(async () => {
       console.log('检测中');
       if (new Date().getTime() >= time) {
